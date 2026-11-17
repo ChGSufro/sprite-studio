@@ -1,0 +1,60 @@
+/* Renderizado Pixel Art estricto (Nearest Neighbor) */
+.pixelated {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Fondo de tablero de ajedrez para visualizar transparencia */
+.checkerboard {
+  background-color: #252536;
+  background-image:
+    linear-gradient(45deg, #313244 25%, transparent 25%),
+    linear-gradient(-45deg, #313244 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #313244 75%),
+    linear-gradient(-45deg, transparent 75%, #313244 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Barra de desplazamiento personalizada */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #181825;
+}
+::-webkit-scrollbar-thumb {
+  background: #45475a;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #585b70;
+}
+
+/* Estilo del slider range */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #313244;
+  border-radius: 999px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #89b4fa;
+  margin-top: -5px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #b4befe;
+}
