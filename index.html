@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuboide — Visor y Animador 2D Sprite Sheet</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Tailwind Config -->
+  <script src="js/tailwind.config.js"></script>
+  <!-- Estilos Personalizados -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="bg-ctp-base text-ctp-text font-sans antialiased min-h-screen flex flex-col selection:bg-ctp-blue selection:text-ctp-crust">
+
+  <!-- Toast de notificaciones (reemplaza alert()) -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Barra Superior (Header) -->
+  <header class="bg-ctp-mantle border-b border-ctp-surface0 px-4 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-ctp-surface0 border border-ctp-blue/40 flex items-center justify-center shadow-inner">
+        <canvas id="logo-canvas" width="32" height="32" class="pixelated w-7 h-7"></canvas>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-ctp-text">Cuboide <span class="text-ctp-blue">Sprite Studio</span></h1>
+          <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-ctp-blue/15 text-ctp-blue border border-ctp-blue/30">64×64 px</span>
+        </div>
+        <p class="text-xs text-ctp-subtext0">Visor Ortográfico, Animador y Depurador de Atlas 2D</p>
+      </div>
+    </div>
+
+    <!-- Carga de archivos PNG y JSON -->
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Botón Cargar PNG -->
+      <label id="drop-png" class="cursor-pointer group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface1 hover:border-ctp-blue/60 transition text-xs font-medium">
+        <svg class="w-4 h-4 text-ctp-teal group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span id="png-status-label">Cargar PNG</span>
+        <input type="file" id="input-png" accept="image/png,image/jpeg,image/webp" class="hidden" />
+      </label>
+
+      <!-- Botón Cargar JSON -->
+      <label id="drop-json" class="cursor-pointer group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface1 hover:border-ctp-blue/60 transition text-xs font-medium">
+        <svg class="w-4 h-4 text-ctp-peach group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span id="json-status-label">Cargar JSON</span>
+        <input type="file" id="input-json" accept=".json,application/json" class="hidden" />
+      </label>
+
+      <!-- Botón Restaurar Demo -->
+      <button id="btn-reset-demo" title="Restaurar Sprite Sheet procedural integrado" class="px-2.5 py-1.5 rounded-lg bg-ctp-crust hover:bg-ctp-surface0 border border-ctp-surface0 text-ctp-subtext0 hover:text-ctp-text transition text-xs font-medium flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+        <span class="hidden sm:inline">Demo</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal (3 Columnas en Desktop) -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 max-w-[1600px] w-full mx-auto">
+
+    <!-- COLUMNA IZQUIERDA: Selector de Fotogramas por Categoría (4 cols) -->
+    <section class="lg:col-span-4 bg-ctp-mantle border border-ctp-surface0 rounded-xl flex flex-col overflow-hidden max-h-[calc(100vh-5.5rem)]">
+      <div class="p-3.5 border-b border-ctp-surface0 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-ctp-text">Catálogo de Fotogramas</h2>
+          <p class="text-[11px] text-ctp-subtext0">Selecciona una pose o expresión (40 celdas)</p>
+        </div>
+        <span id="source-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-ctp-teal/15 text-ctp-teal border border-ctp-teal/30">
+          Demo Procedural
+        </span>
+      </div>
+
+      <!-- Pestañas de Categoría -->
+      <div class="grid grid-cols-4 gap-1 p-2 bg-ctp-crust border-b border-ctp-surface0 text-xs font-medium">
+        <button data-cat="turnaround" class="cat-tab active px-2 py-1.5 rounded-lg bg-ctp-blue text-ctp-crust font-semibold transition truncate">
+          Vistas
+        </button>
+        <button data-cat="states" class="cat-tab px-2 py-1.5 rounded-lg text-ctp-subtext0 hover:bg-ctp-surface0 hover:text-ctp-text transition truncate">
+          Estados
+        </button>
+        <button data-cat="emotions" class="cat-tab px-2 py-1.5 rounded-lg text-ctp-subtext0 hover:bg-ctp-surface0 hover:text-ctp-text transition truncate">
+          Emociones
+        </button>
+        <button data-cat="arms" class="cat-tab px-2 py-1.5 rounded-lg text-ctp-subtext0 hover:bg-ctp-surface0 hover:text-ctp-text transition truncate">
+          Brazos
+        </button>
+      </div>
+
+      <!-- Lista de Frames de la categoría seleccionada -->
+      <div id="frames-grid" class="p-3 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2.5 flex-1 content-start">
+        <!-- Generado dinámicamente por JS -->
+      </div>
+    </section>
+
+    <!-- COLUMNA CENTRAL: Lienzo Principal y Reproductor de Animación (5 cols) -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+      <!-- Tarjeta del Visor Canvas -->
+      <div id="drop-zone-main" class="bg-ctp-mantle border border-ctp-surface0 rounded-xl flex flex-col overflow-hidden relative transition-colors">
+        <!-- Barra de herramientas del Visor -->
+        <div class="px-3.5 py-2.5 border-b border-ctp-surface0 flex flex-wrap items-center justify-between gap-2 bg-ctp-crust/50">
+          <!-- Controles de Zoom -->
+          <div class="flex items-center gap-1 bg-ctp-surface0/70 p-1 rounded-lg">
+            <span class="text-[11px] text-ctp-subtext0 px-1.5 font-medium">Zoom:</span>
+            <button data-zoom="2" class="zoom-btn px-2 py-0.5 rounded text-xs font-mono text-ctp-subtext1 hover:text-ctp-text transition">2x</button>
+            <button data-zoom="4" class="zoom-btn active px-2 py-0.5 rounded text-xs font-mono bg-ctp-blue text-ctp-crust font-semibold transition">4x</button>
+            <button data-zoom="6" class="zoom-btn px-2 py-0.5 rounded text-xs font-mono text-ctp-subtext1 hover:text-ctp-text transition">6x</button>
+          </div>
+
+          <!-- Toggles de Grilla y Transparencia -->
+          <div class="flex items-center gap-1.5">
+            <button id="toggle-grid" class="px-2.5 py-1 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 text-ctp-subtext1 text-xs font-medium flex items-center gap-1.5 border border-transparent transition" title="Mostrar/Ocultar cuadrícula de píxeles">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <path d="M3 9h18M3 15h18M9 3v18M15 3v18"></path>
+              </svg>
+              <span>Grilla</span>
+            </button>
+
+            <button id="toggle-checker" class="px-2.5 py-1 rounded-lg bg-ctp-blue/20 text-ctp-blue border border-ctp-blue/40 text-xs font-medium flex items-center gap-1.5 transition" title="Alternar fondo transparente (ajedrez) o sólido">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Alfa</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Área del Canvas Centrado -->
+        <div id="canvas-stage" class="checkerboard flex-1 min-h-[340px] sm:min-h-[400px] flex items-center justify-center p-6 relative overflow-auto">
+          <div class="relative inline-flex items-center justify-center shadow-2xl rounded-lg overflow-hidden ring-2 ring-ctp-blue/50">
+            <canvas id="main-canvas" width="256" height="256" class="pixelated block"></canvas>
+          </div>
+
+          <!-- Etiqueta flotante de resolución -->
+          <div class="absolute bottom-3 left-3 bg-ctp-crust/90 backdrop-blur-sm border border-ctp-surface0 px-2.5 py-1 rounded-md text-[11px] font-mono text-ctp-subtext1 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-ctp-green animate-pulse"></span>
+            <span id="canvas-info-badge">turnaround_front_0.png • 256×256 px (4x)</span>
+          </div>
+
+          <!-- Overlay Drag & Drop -->
+          <div id="drag-overlay" class="hidden absolute inset-0 bg-ctp-base/90 backdrop-blur-sm border-2 border-dashed border-ctp-blue rounded-xl flex flex-col items-center justify-center p-6 text-center z-20">
+            <svg class="w-12 h-12 text-ctp-blue mb-2 animate-bounce" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <p class="text-sm font-semibold text-ctp-text">Suelta tus archivos aquí</p>
+            <p class="text-xs text-ctp-subtext0 mt-1">Admite <code class="text-ctp-blue">.png</code> y <code class="text-ctp-peach">.json</code> simultáneamente</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta del Reproductor de Animaciones (Loops) -->
+      <div class="bg-ctp-mantle border border-ctp-surface0 rounded-xl p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-ctp-blue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <h2 class="text-sm font-semibold text-ctp-text">Reproductor de Ciclos (Loops)</h2>
+          </div>
+          <button id="btn-stop-anim" class="hidden px-2.5 py-1 rounded-md bg-ctp-red/20 text-ctp-red border border-ctp-red/30 hover:bg-ctp-red/30 text-xs font-medium transition">
+            Detener Loop
+          </button>
+        </div>
+
+        <!-- Botones de Ciclos Predefinidos -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button data-loop="idle" class="loop-btn px-3 py-2 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface1 text-left transition group">
+            <div class="text-xs font-semibold text-ctp-text group-hover:text-ctp-blue">Reposo (Idle)</div>
+            <div class="text-[10px] text-ctp-subtext0 font-mono">2 frames</div>
+          </button>
+
+          <button data-loop="turnaround" class="loop-btn px-3 py-2 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface1 text-left transition group">
+            <div class="text-xs font-semibold text-ctp-text group-hover:text-ctp-blue">Giro 360°</div>
+            <div class="text-[10px] text-ctp-subtext0 font-mono">8 vistas</div>
+          </button>
+
+          <button data-loop="processing" class="loop-btn px-3 py-2 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface1 text-left transition group">
+            <div class="text-xs font-semibold text-ctp-text group-hover:text-ctp-blue">Procesando</div>
+            <div class="text-[10px] text-ctp-subtext0 font-mono">3 frames</div>
+          </button>
+
+          <button data-loop="swing" class="loop-btn px-3 py-2 rounded-lg bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface1 text-left transition group">
+            <div class="text-xs font-semibold text-ctp-text group-hover:text-ctp-blue">Balanceo</div>
+            <div class="text-[10px] text-ctp-subtext0 font-mono">4 frames</div>
+          </button>
+        </div>
+
+        <!-- Control de Velocidad FPS -->
+        <div class="flex items-center gap-3 pt-1 border-t border-ctp-surface0/70">
+          <label for="fps-slider" class="text-xs text-ctp-subtext0 font-medium whitespace-nowrap">Velocidad:</label>
+          <input id="fps-slider" type="range" min="1" max="24" value="6" class="flex-1" />
+          <span id="fps-value" class="text-xs font-mono font-semibold text-ctp-blue bg-ctp-crust px-2 py-0.5 rounded border border-ctp-surface0 min-w-[54px] text-center">
+            6 FPS
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMNA DERECHA: Inspector JSON y Vista Miniatura de Hoja Completa (3 cols) -->
+    <section class="lg:col-span-3 flex flex-col gap-4">
+      <!-- Inspector de Coordenadas JSON -->
+      <div class="bg-ctp-mantle border border-ctp-surface0 rounded-xl p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-ctp-text flex items-center gap-1.5">
+            <span class="text-ctp-peach font-mono">{}</span> Inspector JSON
+          </h2>
+          <button id="btn-copy-json" class="px-2.5 py-1 rounded-md bg-ctp-surface0 hover:bg-ctp-surface1 text-ctp-text text-xs font-medium flex items-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5 text-ctp-blue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copiar</span>
+          </button>
+        </div>
+
+        <!-- Tabla rápida de métricas -->
+        <div class="grid grid-cols-4 gap-1.5 text-center font-mono">
+          <div class="bg-ctp-crust p-1.5 rounded-lg border border-ctp-surface0">
+            <div class="text-[10px] text-ctp-subtext0">X</div>
+            <div id="stat-x" class="text-xs font-semibold text-ctp-blue">0</div>
+          </div>
+          <div class="bg-ctp-crust p-1.5 rounded-lg border border-ctp-surface0">
+            <div class="text-[10px] text-ctp-subtext0">Y</div>
+            <div id="stat-y" class="text-xs font-semibold text-ctp-blue">0</div>
+          </div>
+          <div class="bg-ctp-crust p-1.5 rounded-lg border border-ctp-surface0">
+            <div class="text-[10px] text-ctp-subtext0">W</div>
+            <div id="stat-w" class="text-xs font-semibold text-ctp-teal">64</div>
+          </div>
+          <div class="bg-ctp-crust p-1.5 rounded-lg border border-ctp-surface0">
+            <div class="text-[10px] text-ctp-subtext0">H</div>
+            <div id="stat-h" class="text-xs font-semibold text-ctp-teal">64</div>
+          </div>
+        </div>
+
+        <!-- Bloque de Código JSON del Frame Activo -->
+        <pre id="json-preview" class="bg-ctp-crust border border-ctp-surface0 rounded-lg p-3 text-[11px] font-mono text-ctp-subtext1 overflow-x-auto leading-relaxed"></pre>
+
+        <!-- Snippet listo para JS / Canvas -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-medium text-ctp-subtext0">Snippet HTML5 Canvas:</span>
+            <button id="btn-copy-snippet" class="text-[11px] text-ctp-blue hover:underline">Copiar JS</button>
+          </div>
+          <pre id="js-snippet" class="bg-ctp-crust border border-ctp-surface0 rounded-lg p-2.5 text-[10px] font-mono text-ctp-green overflow-x-auto leading-normal"></pre>
+        </div>
+      </div>
+
+      <!-- Mini-Mapa de la Hoja Completa (640x256) -->
+      <div class="bg-ctp-mantle border border-ctp-surface0 rounded-xl p-4 flex flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-semibold text-ctp-text">Mapa del Atlas (10×4)</h3>
+          <span id="sheet-dimensions" class="text-[10px] font-mono text-ctp-subtext0">640×256 px</span>
+        </div>
+        <p class="text-[11px] text-ctp-subtext0">Haz clic en cualquier celda para inspeccionarla:</p>
+        <div class="checkerboard rounded-lg border border-ctp-surface0 p-1.5 overflow-hidden relative">
+          <canvas id="minimap-canvas" width="640" height="256" class="pixelated w-full h-auto cursor-pointer block rounded"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Lógica de la Aplicación -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
