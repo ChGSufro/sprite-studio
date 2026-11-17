@@ -1,0 +1,6 @@
+# Entorno operativo y artefactos internos
+.agents/
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
